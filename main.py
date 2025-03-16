@@ -9,10 +9,12 @@ from telegram.ext import (
     ChatMemberHandler,
 )
 
+# Настройки
 TOKEN = os.getenv("TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
-PORT = int(os.getenv("PORT", "8000"))
+PORT = int(os.getenv("PORT", "80"))  # Используем порт 80 (разрешен Telegram)
 
+# Этапы анкетирования
 QUESTION_1, QUESTION_2, QUESTION_3, QUESTION_4, QUESTION_5 = range(5)
 
 def start_quiz(update: Update, context: CallbackContext) -> int:
@@ -20,6 +22,7 @@ def start_quiz(update: Update, context: CallbackContext) -> int:
     context.user_data["user_id"] = user.id
     context.user_data["username"] = user.username or "Нет username"
     
+    # Первый вопрос
     update.effective_message.reply_text("Привет! Ответьте на вопросы для вступления:")
     update.effective_message.reply_text("Вопрос 1: Как вас зовут?")
     return QUESTION_1
@@ -103,12 +106,14 @@ def main() -> None:
     dispatcher.add_handler(ChatMemberHandler(handle_chat_member, ChatMemberHandler.MY_CHAT_MEMBER))
     dispatcher.add_handler(conv_handler)
     
+    # Настройка Webhook для Render
     updater.start_webhook(
         listen="0.0.0.0",
         port=PORT,
         url_path=TOKEN,
     )
-    updater.bot.set_webhook(f"https://nnnketa.onrender.com/{TOKEN}")
+    # Используем порт 443 (HTTPS) или 80 (HTTP)
+    updater.bot.set_webhook(f"https://{os.getenv('RENDER_EXTERNAL_URL')}/{TOKEN}")
     updater.idle()
 
 if __name__ == '__main__':
