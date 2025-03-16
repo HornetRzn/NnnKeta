@@ -1,24 +1,30 @@
+import os
 from telegram import Update
 from telegram.ext import (
     Updater,
-    CommandHandler,
     MessageHandler,
     Filters,
     ConversationHandler,
     CallbackContext,
+    ChatMemberHandler,
 )
-import os  # Добавьте это
 
 # Настройки
-TOKEN = os.getenv("TOKEN")  # Теперь берем из переменных окружения
-ADMIN_ID = int(os.getenv("ADMIN_ID"))  # ID должен быть числом
+TOKEN = os.getenv("TOKEN")
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
+PORT = int(os.getenv("PORT", "8000"))
 
 # Этапы анкетирования
 QUESTION_1, QUESTION_2, QUESTION_3, QUESTION_4, QUESTION_5 = range(5)
 
-def start(update: Update, context: CallbackContext) -> int:
-    update.message.reply_text("Привет! Ответьте на вопросы для вступления:")
-    update.message.reply_text("Вопрос 1: Как вас зовут?")
+def start_quiz(update: Update, context: CallbackContext) -> int:
+    user = update.effective_user
+    context.user_data["user_id"] = user.id
+    context.user_data["username"] = user.username or "Нет username"
+    
+    # Первый вопрос
+    update.effective_message.reply_text("Привет! Ответьте на вопросы для вступления:")
+    update.effective_message.reply_text("Вопрос 1: Как вас зовут?")
     return QUESTION_1
 
 def question_1(update: Update, context: CallbackContext) -> int:
@@ -45,15 +51,13 @@ def question_5(update: Update, context: CallbackContext) -> int:
     context.user_data["question_5"] = update.message.text
 
     user = update.message.from_user
-    user_id = user.id
-    username = user.username or "Нет username"
     full_name = f"{user.first_name} {user.last_name or ''}"
 
     message = (
         f"Новая заявка:\n"
-        f"ID: {user_id}\n"
+        f"ID: {context.user_data['user_id']}\n"
         f"Имя: {full_name}\n"
-        f"Username: @{username}\n"
+        f"Username: @{context.user_data['username']}\n"
         f"Ответы:\n"
         f"1. {context.user_data.get('question_1', '-')}\n"
         f"2. {context.user_data.get('question_2', '-')}\n"
@@ -66,18 +70,32 @@ def question_5(update: Update, context: CallbackContext) -> int:
     update.message.reply_text("Заявка отправлена. Ждите ответа!")
     return ConversationHandler.END
 
-def cancel(update: Update, context: CallbackContext) -> int:
-    update.message.reply_text("Анкетирование отменено.")
-    return ConversationHandler.END
+def handle_chat_member(update: Update, context: CallbackContext) -> None:
+    # Проверяем, что заявка была подана в группу/канал
+    new_chat_member = update.my_chat_member.new_chat_member
+    if (
+        new_chat_member
+        and new_chat_member.status == "member"
+        and update.my_chat_member.from_user.is_bot is False
+    ):
+        # Запускаем анкетирование
+        context.bot.send_message(
+            chat_id=update.effective_user.id,
+            text="Привет! Ответьте на вопросы для вступления:",
+        )
+        context.bot.send_message(
+            chat_id=update.effective_user.id,
+            text="Вопрос 1: Как вас зовут?",
+        )
+        # Устанавливаем состояние анкетирования
+        context.user_data["state"] = QUESTION_1
 
 def main() -> None:
-    # Используем переменные окружения
-    PORT = int(os.getenv("PORT", "8000"))  # Добавьте эту строку
     updater = Updater(TOKEN, use_context=True)
     dispatcher = updater.dispatcher
 
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start)],
+        entry_points=[],
         states={
             QUESTION_1: [MessageHandler(Filters.text & ~Filters.command, question_1)],
             QUESTION_2: [MessageHandler(Filters.text & ~Filters.command, question_2)],
@@ -85,18 +103,20 @@ def main() -> None:
             QUESTION_4: [MessageHandler(Filters.text & ~Filters.command, question_4)],
             QUESTION_5: [MessageHandler(Filters.text & ~Filters.command, question_5)],
         },
-        fallbacks=[CommandHandler('cancel', cancel)],
+        fallbacks=[],
     )
 
+    # Обработчик для заявок в группе/канале
+    dispatcher.add_handler(ChatMemberHandler(handle_chat_member, ChatMemberHandler.MY_CHAT_MEMBER))
     dispatcher.add_handler(conv_handler)
     
-    # Добавьте это для работы на Render
+    # Настройка Webhook для Render
     updater.start_webhook(
         listen="0.0.0.0",
         port=PORT,
         url_path=TOKEN,
-        webhook_url=f"https://nnnketa.onrender.com/{TOKEN}"
     )
+    updater.bot.set_webhook(f"https://{os.getenv('RENDER_EXTERNAL_URL')}/{TOKEN}")
     updater.idle()
 
 if __name__ == '__main__':
