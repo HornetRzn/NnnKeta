@@ -11,7 +11,7 @@ from telegram.ext import (
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 ADMIN_ID = int(os.environ.get('ADMIN_ID'))
-WEBHOOK_URL = os.environ.get('WEBHOOK_URL')
+WEBHOOK_URL = os.environ.get('WEBHOOK_URL'))
 PORT = int(os.environ.get('PORT', 10000))
 
 logging.basicConfig(
@@ -24,9 +24,9 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
     try:
         await context.bot.send_message(
             chat_id=user.id,
-            text="📝 Ваше имя?"
+            text="Привет! Ответь на четыре вопроса для вступления 💟\n\nПервый: откуда ты узнал о нашем Telegram-канале/чате?"
         )
-        context.user_data['state'] = 'awaiting_name'  # Начало анкеты
+        context.user_data['state'] = 'awaiting_name'
     except Exception as e:
         logging.error(f"Ошибка: {e}")
 
@@ -37,7 +37,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if state == 'awaiting_name':
         user_data['name'] = update.message.text
         user_data['state'] = 'awaiting_age'
-        await update.message.reply_text("🔢 Сколько вам лет?")
+        await update.message.reply_text("В следующем сообщении напиши, пожалуйста, свой возраст и из какого ты города.")
 
     elif state == 'awaiting_age':
         if not update.message.text.isdigit():
@@ -45,26 +45,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         user_data['age'] = update.message.text
         user_data['state'] = 'awaiting_city'
-        await update.message.reply_text("🏙️ Ваш город?")
+        await update.message.reply_text("Для чего ты хочешь вступить в «Гей-Рязань», что интересует здесь прежде всего?\n\nМожно ответить кратко или развёрнуто (как хочешь).")
 
     elif state == 'awaiting_city':
         user_data['city'] = update.message.text
         user_data['state'] = 'awaiting_reason'
-        await update.message.reply_text("💬 Причина вступления?")
+        await update.message.reply_text("Назови три причины, по которым мы не должны тебе отказать 🤔")
 
     elif state == 'awaiting_reason':
         user_data['reason'] = update.message.text
         await context.bot.send_message(
             chat_id=ADMIN_ID,
             text=f"""🚨 Новая заявка!
-👤 Имя: {user_data['name']}
-🔢 Возраст: {user_data['age']}
-🏙️ Город: {user_data['city']}
-💬 Причина: {user_data['reason']}
+🟪 Откуда: {user_data['name']}
+🟪 Возраст и город: {user_data['age']}
+🟪 Интересы: {user_data['city']}
+🟪 Плюсы: {user_data['reason']}
 🆔 ID: {update.message.from_user.id}"""
         )
-        await update.message.reply_text("✅ Заявка отправлена!")
-        # Очищаем данные
+        await update.message.reply_text("✔ Заявка отправлена!\n\nПосле того, как заявка будет одобрена, «Гей-Рязань» появится в списке твоих чатов Telegram.\n\nЕсли возникнут дополнительные вопросы, тебе напишет наш админ.")
         user_data.clear()
 
 if __name__ == '__main__':
