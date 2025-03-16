@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -41,10 +42,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("В следующем сообщении напиши, пожалуйста, свой возраст и из какого ты города.")
 
     elif state == 'awaiting_age':
-        if not update.message.text.isdigit():
-            await update.message.reply_text("❌ Возраст должен быть числом\. Попробуйте еще раз\!")
+        # Проверяем, есть ли в сообщении хотя бы одно число
+        if not re.search(r'\d+', update.message.text):
+            await update.message.reply_text("❌ Пожалуйста, укажите ваш возраст числом (например: 25 или «мне 25»).")
             return
-        user_data['age'] = update.message.text
+        user_data['age'] = update.message.text  # Сохраняем ВЕСЬ текст
         user_data['state'] = 'awaiting_city'
         await update.message.reply_text("Для чего ты хочешь вступить в «Гей\-Рязань», что интересует здесь прежде всего\?\n\nМожно ответить кратко или развёрнуто \(как хочешь\)\.")
 
@@ -59,7 +61,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id=ADMIN_ID,
             text=f"""🚨 Новая заявка\!
 🟪 Откуда: {user_data['name']}
-🟪 Возраст и город: {user_data['age']}
+🟪 Возраст и город: {user_data['age']}  # Теперь здесь полный текст
 🟪 Интересы: {user_data['city']}
 🟪 Плюсы: {user_data['reason']}
 🆔 ID: {update.message.from_user.id}"""
