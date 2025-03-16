@@ -3,10 +3,10 @@ from telegram import Update
 from telegram.ext import (
     Updater,
     MessageHandler,
-    Filters,
     ConversationHandler,
     CallbackContext,
     ChatMemberHandler,
+    filters  # Исправленный импорт Filters
 )
 
 # Настройки
@@ -88,22 +88,22 @@ def handle_chat_member(update: Update, context: CallbackContext) -> None:
         context.user_data["state"] = QUESTION_1
 
 def main() -> None:
-    updater = Updater(TOKEN, use_context=True)
+    updater = Updater(TOKEN)
     dispatcher = updater.dispatcher
 
     conv_handler = ConversationHandler(
         entry_points=[],
         states={
-            QUESTION_1: [MessageHandler(Filters.text & ~Filters.command, question_1)],
-            QUESTION_2: [MessageHandler(Filters.text & ~Filters.command, question_2)],
-            QUESTION_3: [MessageHandler(Filters.text & ~Filters.command, question_3)],
-            QUESTION_4: [MessageHandler(Filters.text & ~Filters.command, question_4)],
-            QUESTION_5: [MessageHandler(Filters.text & ~Filters.command, question_5)],
+            QUESTION_1: [MessageHandler(filters.TEXT & ~filters.COMMAND, question_1)],
+            QUESTION_2: [MessageHandler(filters.TEXT & ~filters.COMMAND, question_2)],
+            QUESTION_3: [MessageHandler(filters.TEXT & ~filters.COMMAND, question_3)],
+            QUESTION_4: [MessageHandler(filters.TEXT & ~filters.COMMAND, question_4)],
+            QUESTION_5: [MessageHandler(filters.TEXT & ~filters.COMMAND, question_5)],
         },
         fallbacks=[],
     )
 
-    dispatcher.add_handler(ChatMemberHandler(handle_chat_member, ChatMemberHandler.MY_CHAT_MEMBER))
+    dispatcher.add_handler(ChatMemberHandler(handle_chat_member))
     dispatcher.add_handler(conv_handler)
     
     # Настройка Webhook для Render
@@ -112,7 +112,6 @@ def main() -> None:
         port=PORT,
         url_path=TOKEN,
     )
-    # Используем порт 443 (HTTPS) или 80 (HTTP)
     updater.bot.set_webhook(f"https://{os.getenv('RENDER_EXTERNAL_URL')}/{TOKEN}")
     updater.idle()
 
