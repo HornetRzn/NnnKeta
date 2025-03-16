@@ -1,18 +1,18 @@
 import os
-from telegram import Update
+from telegram import Update, Bot
 from telegram.ext import (
     Updater,
     MessageHandler,
     ConversationHandler,
     CallbackContext,
     ChatMemberHandler,
-    filters  # Исправленный импорт Filters
+    filters
 )
 
 # Настройки
 TOKEN = os.getenv("TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
-PORT = int(os.getenv("PORT", "80"))  # Используем порт 80 (разрешен Telegram)
+PORT = int(os.getenv("PORT", "80"))  # Используем порт 80
 
 # Этапы анкетирования
 QUESTION_1, QUESTION_2, QUESTION_3, QUESTION_4, QUESTION_5 = range(5)
@@ -88,7 +88,10 @@ def handle_chat_member(update: Update, context: CallbackContext) -> None:
         context.user_data["state"] = QUESTION_1
 
 def main() -> None:
-    updater = Updater(TOKEN)
+    # Исправленная инициализация Updater
+    bot = Bot(token=TOKEN)
+    updater = Updater(bot=bot, update_queue=None)  # Добавлены параметры
+
     dispatcher = updater.dispatcher
 
     conv_handler = ConversationHandler(
