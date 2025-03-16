@@ -95,7 +95,7 @@ def main() -> None:
         listen="0.0.0.0",
         port=PORT,
         url_path=TOKEN,
-        webhook_url=f"https://your-bot-name.onrender.com/{TOKEN}"
+        webhook_url=f"https://nnnketa.onrender.com/{TOKEN}"
     )
     updater.idle()
 
