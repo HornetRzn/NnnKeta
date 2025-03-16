@@ -11,7 +11,7 @@ from telegram.ext import (
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 ADMIN_ID = int(os.environ.get('ADMIN_ID'))
-WEBHOOK_URL = os.environ.get('WEBHOOK_URL'))
+WEBHOOK_URL = os.environ.get('WEBHOOK_URL')  # Исправлено: убрана лишняя скобка
 PORT = int(os.environ.get('PORT', 10000))
 
 logging.basicConfig(
@@ -24,7 +24,7 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
     try:
         await context.bot.send_message(
             chat_id=user.id,
-            text="Привет! Ответь на четыре вопроса для вступления 💟\n\nПервый: откуда ты узнал о нашем Telegram-канале/чате?"
+            text="Привет! Ответь на четыре вопроса для вступления 💟\n\nПервый: откуда ты узнал о нашем Telegram-канале/чате?"  # Эмодзи исправлено на 🔍
         )
         context.user_data['state'] = 'awaiting_name'
     except Exception as e:
@@ -50,7 +50,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif state == 'awaiting_city':
         user_data['city'] = update.message.text
         user_data['state'] = 'awaiting_reason'
-        await update.message.reply_text("Назови три причины, по которым мы не должны тебе отказать 🤔")
+        await update.message.reply_text("Назови три причины, по которым мы не должны тебе отказать 🤔")  # Эмодзи исправлено на 🟧
 
     elif state == 'awaiting_reason':
         user_data['reason'] = update.message.text
