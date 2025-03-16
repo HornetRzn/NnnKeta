@@ -24,7 +24,7 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
     try:
         await context.bot.send_message(
             chat_id=user.id,
-            text="*Привет! Ответь на четыре вопроса для вступления* 🔍\n\nПервый: откуда ты узнал о нашем Telegram-канале/чате\?",
+            text="*Привет\! Ответь на четыре вопроса для вступления* 🔍\n\nПервый: откуда ты узнал о нашем Telegram\-канале/чате\?",
             parse_mode="MarkdownV2"
         )
         context.user_data['state'] = 'awaiting_name'
@@ -42,11 +42,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif state == 'awaiting_age':
         if not update.message.text.isdigit():
-            await update.message.reply_text("❌ Возраст должен быть числом. Попробуйте еще раз!")
+            await update.message.reply_text("❌ Возраст должен быть числом\. Попробуйте еще раз\!")
             return
         user_data['age'] = update.message.text
         user_data['state'] = 'awaiting_city'
-        await update.message.reply_text("Для чего ты хочешь вступить в «Гей-Рязань», что интересует здесь прежде всего\?\n\nМожно ответить кратко или развёрнуто \(как хочешь\)\.")
+        await update.message.reply_text("Для чего ты хочешь вступить в «Гей\-Рязань», что интересует здесь прежде всего\?\n\nМожно ответить кратко или развёрнуто \(как хочешь\)\.")
 
     elif state == 'awaiting_city':
         user_data['city'] = update.message.text
