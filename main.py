@@ -1,4 +1,4 @@
-from telegram import Update, ReplyKeyboardRemove
+from telegram import Update
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -7,10 +7,11 @@ from telegram.ext import (
     ConversationHandler,
     CallbackContext,
 )
+import os  # Добавьте это
 
 # Настройки
-TOKEN = "7966913734:AAH3gNP0HIMMFf6utQ7duxZi0OydomqZJec"  # Замените на ваш токен
-ADMIN_ID = 7149042364  # Ваш Telegram ID
+TOKEN = os.getenv("TOKEN")  # Теперь берем из переменных окружения
+ADMIN_ID = int(os.getenv("ADMIN_ID"))  # ID должен быть числом
 
 # Этапы анкетирования
 QUESTION_1, QUESTION_2, QUESTION_3, QUESTION_4, QUESTION_5 = range(5)
@@ -70,7 +71,9 @@ def cancel(update: Update, context: CallbackContext) -> int:
     return ConversationHandler.END
 
 def main() -> None:
-    updater = Updater(TOKEN)
+    # Используем переменные окружения
+    PORT = int(os.getenv("PORT", "8000"))  # Добавьте эту строку
+    updater = Updater(TOKEN, use_context=True)
     dispatcher = updater.dispatcher
 
     conv_handler = ConversationHandler(
@@ -86,7 +89,14 @@ def main() -> None:
     )
 
     dispatcher.add_handler(conv_handler)
-    updater.start_polling()
+    
+    # Добавьте это для работы на Render
+    updater.start_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        url_path=TOKEN,
+        webhook_url=f"https://your-bot-name.onrender.com/{TOKEN}"
+    )
     updater.idle()
 
 if __name__ == '__main__':
