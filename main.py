@@ -40,6 +40,8 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
         return ConversationHandler.END
 
 async def handle_answer_1(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.chat.type != "private":
+        return  # Игнорируем сообщения не из личного чата
     context.user_data["question_1"] = update.message.text
     await update.message.reply_text("**2. Какие навыки у вас есть?**")
     return QUESTION_2
