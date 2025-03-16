@@ -27,12 +27,10 @@ logging.basicConfig(
 async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.chat_join_request.from_user
     try:
-        # Сохраняем ID пользователя
         context.user_data['user_id'] = user.id
         context.user_data['username'] = user.username or "Нет username"
         context.user_data['full_name'] = f"{user.first_name} {user.last_name or ''}"
         
-        # Отправляем первый вопрос
         await context.bot.send_message(
             chat_id=user.id,
             text="Привет! Ответьте на вопросы для вступления:\n**1. Как вас зовут?**"
@@ -43,10 +41,8 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
         return ConversationHandler.END
 
 async def handle_answer_1(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Проверяем, что сообщение пришло в личном чате
     if update.message.chat.type != "private":
         return ConversationHandler.END
-    
     context.user_data["question_1"] = update.message.text
     await update.message.reply_text("**2. Какие навыки у вас есть?**")
     return QUESTION_2
@@ -69,9 +65,8 @@ async def handle_answer_4(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_answer_5(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["question_5"] = update.message.text
     
-    # Формируем отчет для админа
     report = (
-        f"🚨 **Новая заявка!**\n"
+        f"🚨 Новая заявка!\n"
         f"🆔 ID: {context.user_data['user_id']}\n"
         f"👤 Имя: {context.user_data['full_name']}\n"
         f"📱 Username: @{context.user_data['username']}\n"
@@ -84,7 +79,7 @@ async def handle_answer_5(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     
     await context.bot.send_message(chat_id=ADMIN_ID, text=report)
-    await update.message.reply_text("✅ Заявка отправлена админу!")
+    await update.message.reply_text("✅ Заявка отправлена!")
     context.user_data.clear()
     return ConversationHandler.END
 
@@ -96,7 +91,6 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 if __name__ == '__main__':
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     
-    # Настройка ConversationHandler
     conv_handler = ConversationHandler(
         entry_points=[ChatJoinRequestHandler(handle_join_request)],
         states={
@@ -111,7 +105,6 @@ if __name__ == '__main__':
     
     app.add_handler(conv_handler)
     
-    # Вебхук
     app.run_webhook(
         listen="0.0.0.0",
         port=PORT,
