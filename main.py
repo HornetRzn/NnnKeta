@@ -7,17 +7,12 @@ from telegram.ext import (
     MessageHandler,
     filters,
     ChatJoinRequestHandler,
-    ConversationHandler,
 )
 
-# Константы
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 ADMIN_ID = int(os.environ.get('ADMIN_ID'))
 WEBHOOK_URL = os.environ.get('WEBHOOK_URL')
 PORT = int(os.environ.get('PORT', 10000))
-
-# Состояния диалога
-NAME, REASON = range(2)
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -29,52 +24,39 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
     try:
         await context.bot.send_message(
             chat_id=user.id,
-            text="📝 Введите ваше имя:"
+            text="📝 Ваше имя?"
         )
-        return NAME  # Переход к состоянию NAME
+        context.user_data['state'] = 'awaiting_name'  # Устанавливаем состояние
     except Exception as e:
         logging.error(f"Ошибка: {e}")
-        return ConversationHandler.END
 
-async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['name'] = update.message.text
-    await update.message.reply_text("📝 Теперь укажите причину вступления:")
-    return REASON  # Переход к состоянию REASON
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_data = context.user_data
+    state = user_data.get('state')
 
-async def get_reason(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['reason'] = update.message.text
-    user = update.message.from_user
+    if state == 'awaiting_name':
+        # Сохраняем имя и запрашиваем причину
+        user_data['name'] = update.message.text
+        user_data['state'] = 'awaiting_reason'
+        await update.message.reply_text("💬 Причина вступления?")
     
-    # Отправка данных администратору
-    await context.bot.send_message(
-        chat_id=ADMIN_ID,
-        text=f"🚨 Новая заявка!\n👤 Имя: {context.user_data['name']}\n💬 Причина: {context.user_data['reason']}\n🆔 ID: {user.id}"
-    )
-    
-    await update.message.reply_text("✅ Заявка отправлена!")
-    context.user_data.clear()  # Очистка временных данных
-    return ConversationHandler.END
-
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("❌ Диалог прерван.")
-    context.user_data.clear()
-    return ConversationHandler.END
+    elif state == 'awaiting_reason':
+        # Сохраняем причину и отправляем заявку
+        user_data['reason'] = update.message.text
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=f"🚨 Новая заявка!\n👤 Имя: {user_data['name']}\n💬 Причина: {user_data['reason']}\n🆔 ID: {update.message.from_user.id}"
+        )
+        await update.message.reply_text("✅ Заявка отправлена!")
+        # Очищаем данные
+        user_data.pop('state', None)
+        user_data.pop('name', None)
+        user_data.pop('reason', None)
 
 if __name__ == '__main__':
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-    
-    # Обработчик диалога
-    conv_handler = ConversationHandler(
-        entry_points=[ChatJoinRequestHandler(handle_join_request)],
-        states={
-            NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
-            REASON: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_reason)]
-        },
-        fallbacks=[MessageHandler(filters.ALL, cancel)],
-        allow_reentry=True
-    )
-    
-    app.add_handler(conv_handler)
+    app.add_handler(ChatJoinRequestHandler(handle_join_request))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     app.run_webhook(
         listen="0.0.0.0",
