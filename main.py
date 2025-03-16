@@ -12,7 +12,7 @@ from telegram.ext import (
 # Настройки
 TOKEN = os.getenv("TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
-PORT = int(os.getenv("PORT", "80"))  # Используем порт 80
+PORT = int(os.getenv("PORT", "443"))  # Используем порт 80
 
 # Этапы анкетирования
 QUESTION_1, QUESTION_2, QUESTION_3, QUESTION_4, QUESTION_5 = range(5)
