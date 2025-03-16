@@ -35,6 +35,7 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_data = context.user_data
     state = user_data.get('state')
+    user = update.message.from_user  # Получаем объект пользователя
 
     if state == 'awaiting_name':
         user_data['name'] = update.message.text
@@ -42,11 +43,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("В следующем сообщении напиши, пожалуйста, свой возраст и из какого ты города.")
 
     elif state == 'awaiting_age':
-        # Проверяем, есть ли в сообщении хотя бы одно число
         if not re.search(r'\d+', update.message.text):
             await update.message.reply_text("❌ Пожалуйста, укажите ваш возраст числом (например: 25 или «мне 25»).")
             return
-        user_data['age'] = update.message.text  # Сохраняем ВЕСЬ текст
+        user_data['age'] = update.message.text
         user_data['state'] = 'awaiting_city'
         await update.message.reply_text("Для чего ты хочешь вступить в «Гей\-Рязань», что интересует здесь прежде всего\?\n\nМожно ответить кратко или развёрнуто \(как хочешь\)\.")
 
@@ -57,14 +57,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif state == 'awaiting_reason':
         user_data['reason'] = update.message.text
+        
+        # Формируем информацию о пользователе
+        user_info = []
+        if user.full_name:
+            user_info.append(f"👤 Имя: {user.full_name}")
+        if user.username:
+            user_info.append(f"🔗 Username: @{user.username}")
+        user_info.append(f"🆔 ID: {user.id}")
+
         await context.bot.send_message(
             chat_id=ADMIN_ID,
             text=f"""🚨 Новая заявка\!
+{"\n".join(user_info)}
 🟪 Откуда: {user_data['name']}
-🟪 Возраст и город: {user_data['age']}  # Теперь здесь полный текст
+🟪 Возраст и город: {user_data['age']}
 🟪 Интересы: {user_data['city']}
-🟪 Плюсы: {user_data['reason']}
-🆔 ID: {update.message.from_user.id}"""
+🟪 Плюсы: {user_data['reason']}"""
         )
         await update.message.reply_text(
             "*✔ Заявка отправлена\!*\n\nПосле того, как заявка будет одобрена, «Гей\-Рязань» появится в списке твоих чатов Telegram\.\n\nЕсли возникнут дополнительные вопросы, тебе напишет наш админ\.",
