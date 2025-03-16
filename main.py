@@ -108,7 +108,7 @@ def main() -> None:
         port=PORT,
         url_path=TOKEN,
     )
-    updater.bot.set_webhook(f"https://{os.getenv('RENDER_EXTERNAL_URL')}/{TOKEN}")
+    updater.bot.set_webhook(f"https://nnnketa.onrender.com/{TOKEN}")
     updater.idle()
 
 if __name__ == '__main__':
