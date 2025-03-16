@@ -94,14 +94,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             escaped_reasons = helpers.escape_markdown(user_data['reasons'], version=2)
 
             await context.bot.send_message(
-                chat_id=ADMIN_ID,
-                text=f"""🚨 *Новая заявка\\!*
+    chat_id=ADMIN_ID,
+    text=f"""🚨 *Новая заявка\\!*
 • **Источник:** {escaped_source}
 • **Возраст/город:** {escaped_age}, {escaped_city}
 • **Цель:** {escaped_purpose}
-• **Причины:**\n{escaped_reasons.replace('\n', '\\n')}
+• **Причины:**\n{escaped_reasons.replace('\n', '\\\\n')}
 • **ID:** {update.message.from_user.id}""",
-                parse_mode="MarkdownV2"
+    parse_mode="MarkdownV2"
             )
             await update.message.reply_text(
                 helpers.escape_markdown(
