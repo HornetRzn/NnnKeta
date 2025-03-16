@@ -71,16 +71,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         user_data['state'] = 'q3'
 
-    elif state == 'q3':
-        user_data['purpose'] = update.message.text
-        await update.message.reply_text(
-            helpers.escape_markdown(
-                "Назови три причины, по которым мы не должны тебе отказать 🤔\n"
-                "(Каждую причину можно писать с новой строки)",
-                version=2
-            ),
+    elif state == 'q4':
+    user_data['reasons'] = update.message.text
+    try:
+        # Исправленные строки:
+        escaped_source = helpers.escape_markdown(user_data['source'], version=2)
+        escaped_age = helpers.escape_markdown(user_data['age'], version=2)
+        escaped_city = helpers.escape_markdown(user_data['city'], version=2)
+        escaped_purpose = helpers.escape_markdown(user_data['purpose'], version=2)
+        escaped_reasons = helpers.escape_markdown(user_data['reasons'], version=2)
+
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=f"""🚨 *Новая заявка\\!*
+• **Источник:** {escaped_source}
+• **Возраст/город:** {escaped_age}, {escaped_city}
+• **Цель:** {escaped_purpose}
+• **Причины:**\n{escaped_reasons.replace('\n', '\\n')}
+• **ID:** {update.message.from_user.id}""",
             parse_mode="MarkdownV2"
         )
+        # ... остальной код
         user_data['state'] = 'q4'
 
     elif state == 'q4':
