@@ -9,12 +9,10 @@ from telegram.ext import (
     ChatMemberHandler,
 )
 
-# Настройки
 TOKEN = os.getenv("TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 PORT = int(os.getenv("PORT", "8000"))
 
-# Этапы анкетирования
 QUESTION_1, QUESTION_2, QUESTION_3, QUESTION_4, QUESTION_5 = range(5)
 
 def start_quiz(update: Update, context: CallbackContext) -> int:
@@ -22,7 +20,6 @@ def start_quiz(update: Update, context: CallbackContext) -> int:
     context.user_data["user_id"] = user.id
     context.user_data["username"] = user.username or "Нет username"
     
-    # Первый вопрос
     update.effective_message.reply_text("Привет! Ответьте на вопросы для вступления:")
     update.effective_message.reply_text("Вопрос 1: Как вас зовут?")
     return QUESTION_1
@@ -71,14 +68,12 @@ def question_5(update: Update, context: CallbackContext) -> int:
     return ConversationHandler.END
 
 def handle_chat_member(update: Update, context: CallbackContext) -> None:
-    # Проверяем, что заявка была подана в группу/канал
     new_chat_member = update.my_chat_member.new_chat_member
     if (
         new_chat_member
         and new_chat_member.status == "member"
         and update.my_chat_member.from_user.is_bot is False
     ):
-        # Запускаем анкетирование
         context.bot.send_message(
             chat_id=update.effective_user.id,
             text="Привет! Ответьте на вопросы для вступления:",
@@ -87,7 +82,6 @@ def handle_chat_member(update: Update, context: CallbackContext) -> None:
             chat_id=update.effective_user.id,
             text="Вопрос 1: Как вас зовут?",
         )
-        # Устанавливаем состояние анкетирования
         context.user_data["state"] = QUESTION_1
 
 def main() -> None:
@@ -106,11 +100,9 @@ def main() -> None:
         fallbacks=[],
     )
 
-    # Обработчик для заявок в группе/канале
     dispatcher.add_handler(ChatMemberHandler(handle_chat_member, ChatMemberHandler.MY_CHAT_MEMBER))
     dispatcher.add_handler(conv_handler)
     
-    # Настройка Webhook для Render
     updater.start_webhook(
         listen="0.0.0.0",
         port=PORT,
