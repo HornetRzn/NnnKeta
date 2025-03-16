@@ -1,6 +1,6 @@
 import logging
 import os
-from telegram import Update, helpers
+from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
     ContextTypes,
@@ -24,14 +24,9 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
     try:
         await context.bot.send_message(
             chat_id=user.id,
-            text=helpers.escape_markdown(
-                "**Привет! Ответь на четыре вопроса для вступления** 💟\n\n"
-                "1. Откуда ты узнал о нашем Telegram-канале/чате?",
-                version=2
-            ),
-            parse_mode="MarkdownV2"
+            text="📝 Ваше имя?"
         )
-        context.user_data['state'] = 'q1'
+        context.user_data['state'] = 'awaiting_name'  # Начало анкеты
     except Exception as e:
         logging.error(f"Ошибка: {e}")
 
@@ -39,87 +34,44 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_data = context.user_data
     state = user_data.get('state')
 
-    if state == 'q1':
-        user_data['source'] = update.message.text
-        await update.message.reply_text(
-            helpers.escape_markdown(
-                "В следующем сообщении напиши, пожалуйста, свой возраст и из какого ты города.\n"
-                "Пример: 25, Рязань",
-                version=2
-            ),
-            parse_mode="MarkdownV2"
-        )
-        user_data['state'] = 'q2'
+    if state == 'awaiting_name':
+        user_data['name'] = update.message.text
+        user_data['state'] = 'awaiting_age'
+        await update.message.reply_text("🔢 Сколько вам лет?")
 
-    elif state == 'q2':
-        if "," not in update.message.text:
-            await update.message.reply_text(
-                helpers.escape_markdown("❌ Используй формат: возраст, город. Пример: 25, Рязань", version=2),
-                parse_mode="MarkdownV2"
-            )
+    elif state == 'awaiting_age':
+        if not update.message.text.isdigit():
+            await update.message.reply_text("❌ Возраст должен быть числом. Попробуйте еще раз!")
             return
-        age_city = update.message.text.split(",", 1)
-        user_data['age'] = age_city[0].strip()
-        user_data['city'] = age_city[1].strip()
-        await update.message.reply_text(
-            helpers.escape_markdown(
-                "Для чего ты хочешь вступить в «Гей-Рязань», что интересует здесь прежде всего?\n"
-                "(Можно ответить кратко или развёрнуто)",
-                version=2
-            ),
-            parse_mode="MarkdownV2"
+        user_data['age'] = update.message.text
+        user_data['state'] = 'awaiting_city'
+        await update.message.reply_text("🏙️ Ваш город?")
+
+    elif state == 'awaiting_city':
+        user_data['city'] = update.message.text
+        user_data['state'] = 'awaiting_reason'
+        await update.message.reply_text("💬 Причина вступления?")
+
+    elif state == 'awaiting_reason':
+        user_data['reason'] = update.message.text
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=f"""🚨 Новая заявка!
+👤 Имя: {user_data['name']}
+🔢 Возраст: {user_data['age']}
+🏙️ Город: {user_data['city']}
+💬 Причина: {user_data['reason']}
+🆔 ID: {update.message.from_user.id}"""
         )
-        user_data['state'] = 'q3'
-
-    elif state == 'q3':
-        user_data['purpose'] = update.message.text
-        await update.message.reply_text(
-            helpers.escape_markdown(
-                "Назови три причины, по которым мы не должны тебе отказать 🤔\n"
-                "(Каждую причину можно писать с новой строки)",
-                version=2
-            ),
-            parse_mode="MarkdownV2"
-        )
-        user_data['state'] = 'q4'
-
-    elif state == 'q4':
-        user_data['reasons'] = update.message.text
-        try:
-            escaped_source = helpers.escape_markdown(user_data['source'], version=2)
-            escaped_age = helpers.escape_markdown(user_data['age'], version=2)
-            escaped_city = helpers.escape_markdown(user_data['city'], version=2)
-            escaped_purpose = helpers.escape_markdown(user_data['purpose'], version=2)
-            escaped_reasons = helpers.escape_markdown(user_data['reasons'], version=2)
-
-            # Фикс для f-строки с экранированием
-            reasons_text = escaped_reasons.replace('\n', '\n')  # Упрощаем форматирование
-            await context.bot.send_message(
-                chat_id=ADMIN_ID,
-                text=f"""🚨 *Новая заявка\\!*
-• **Источник:** {escaped_source}
-• **Возраст/город:** {escaped_age}, {escaped_city}
-• **Цель:** {escaped_purpose}
-• **Причины:**\n{reasons_text}
-• **ID:** {update.message.from_user.id}""",
-                parse_mode="MarkdownV2"
-            )
-            await update.message.reply_text(
-                helpers.escape_markdown(
-                    "☑️ **Заявка отправлена!**\n\n"
-                    "После одобрения чат появится в списке. Если будут вопросы — админ напишет отдельно.",
-                    version=2
-                ),
-                parse_mode="MarkdownV2"
-            )
-            user_data.clear()
-        except Exception as e:
-            logging.error(f"Ошибка отправки: {e}")
+        await update.message.reply_text("✅ Заявка отправлена!")
+        # Очищаем данные
+        user_data.clear()
 
 if __name__ == '__main__':
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(ChatJoinRequestHandler(handle_join_request))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    
     app.run_webhook(
         listen="0.0.0.0",
         port=PORT,
