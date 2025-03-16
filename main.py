@@ -11,7 +11,7 @@ from telegram.ext import (
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 ADMIN_ID = int(os.environ.get('ADMIN_ID'))
-WEBHOOK_URL = os.environ.get('WEBHOOK_URL')  # Исправлено: убрана лишняя скобка
+WEBHOOK_URL = os.environ.get('WEBHOOK_URL')
 PORT = int(os.environ.get('PORT', 10000))
 
 logging.basicConfig(
@@ -24,7 +24,8 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
     try:
         await context.bot.send_message(
             chat_id=user.id,
-            text="Привет! Ответь на четыре вопроса для вступления 💟\n\nПервый: откуда ты узнал о нашем Telegram-канале/чате?"  # Эмодзи исправлено на 🔍
+            text="*Привет! Ответь на четыре вопроса для вступления* 🔍\n\nПервый: откуда ты узнал о нашем Telegram-канале/чате?",  # Жирный текст
+            parse_mode="MarkdownV2"
         )
         context.user_data['state'] = 'awaiting_name'
     except Exception as e:
@@ -50,7 +51,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif state == 'awaiting_city':
         user_data['city'] = update.message.text
         user_data['state'] = 'awaiting_reason'
-        await update.message.reply_text("Назови три причины, по которым мы не должны тебе отказать 🤔")  # Эмодзи исправлено на 🟧
+        await update.message.reply_text("Назови три причины, по которым мы не должны тебе отказать 🟧")
 
     elif state == 'awaiting_reason':
         user_data['reason'] = update.message.text
@@ -63,7 +64,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 🟪 Плюсы: {user_data['reason']}
 🆔 ID: {update.message.from_user.id}"""
         )
-        await update.message.reply_text("✔ Заявка отправлена!\n\nПосле того, как заявка будет одобрена, «Гей-Рязань» появится в списке твоих чатов Telegram.\n\nЕсли возникнут дополнительные вопросы, тебе напишет наш админ.")
+        await update.message.reply_text(
+            "*✔ Заявка отправлена\!*\n\nПосле того, как заявка будет одобрена, «Гей-Рязань» появится в списке твоих чатов Telegram\.\n\nЕсли возникнут дополнительные вопросы, тебе напишет наш админ.",
+            parse_mode="MarkdownV2"  # Жирный текст + экранирование
+        )
         user_data.clear()
 
 if __name__ == '__main__':
