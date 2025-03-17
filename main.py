@@ -21,11 +21,13 @@ def escape_markdown(text: str) -> str:
     """Экранирует все спецсимволы MarkdownV2."""
     escape_chars = '_*[]()~`>#+-=|{}.!'
     return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
+
 async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.chat_join_request.from_user
     try:
+        # Исправлено: экранирование и правильное форматирование
         text = (
-            "**Привет! Ответь на четыре вопроса для вступления** 🔍\n"
+            "**" + escape_markdown("Привет! Ответь на четыре вопроса для вступления") + "** 🔍\n"
             "Первый: откуда ты узнал о нашем Telegram-канале/чате?"
         )
         await context.bot.send_message(
@@ -36,6 +38,7 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
         context.user_data['state'] = 'awaiting_name'
     except Exception as e:
         logging.error(f"Ошибка: {e}")
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_data = context.user_data
     state = user_data.get('state')
@@ -64,7 +67,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif state == 'awaiting_city':
         user_data['city'] = update.message.text
         user_data['state'] = 'awaiting_reason'
-        await update.message.reply_text(escape_markdown("Назови три причины, по которым мы не должны тебе отказать 🟧"), parse_mode="MarkdownV2")
+        await update.message.reply_text(
+            escape_markdown("Назови три причины, по которым мы не должны тебе отказать 🟧"),
+            parse_mode="MarkdownV2"
+        )
     elif state == 'awaiting_reason':
         user_data['reason'] = update.message.text
         user_info = []
@@ -86,17 +92,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text=admin_message,
             parse_mode="MarkdownV2"
         )
-        # Исправлено: "Заявка отправлена" теперь жирным
+        # Исправлено: экранирование восклицательного знака
         success_text = (
             "✔ **Заявка отправлена**!\n"
             "После того, когда заявка будет одобрена, «Гей-Рязань» появится в списке твоих чатов Telegram.\n"
             "Если возникнут дополнительные вопросы, тебе напишет наш админ."
         )
+        # Экранируем только спецсимволы, оставляя форматирование
+        escaped_success = (
+            "✔ **Заявка отправлена**!" + escape_markdown("!\n") + 
+            escape_markdown("После того, когда заявка будет одобрена, «Гей-Рязань» появится в списке твоих чатов Telegram.\n") +
+            escape_markdown("Если возникнут дополнительные вопросы, тебе напишет наш админ.")
+        )
         await update.message.reply_text(
-            text=success_text,
+            text=escaped_success,
             parse_mode="MarkdownV2"
         )
         user_data.clear()
+
 if __name__ == '__main__':
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(ChatJoinRequestHandler(handle_join_request))
