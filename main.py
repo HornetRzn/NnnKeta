@@ -87,7 +87,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"🟪 Откуда: {escape_markdown(user_data['name'])}",
             f"🟪 Возраст и город: {escape_markdown(user_data['age'])}",
             f"🟪 Интересы: {escape_markdown(user_data['city'])}",
-            f"🟪 Плюсы: {escape_markdown(user_data['reason']}"
+            f"🟪 Плюсы: {escape_markdown(user_data['reason'])}"  # ✅ Исправлено: добавлена закрывающая скобка
         ])
 
         await context.bot.send_message(
