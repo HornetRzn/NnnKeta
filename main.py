@@ -29,7 +29,7 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
     user = update.chat_join_request.from_user
     try:
         part1 = escape_markdown("Привет! Ответь на четыре вопроса для вступления")
-        part2 = escape_markdown(" 🔍\n\nПервый: откуда ты узнал о нашем Telegram-канале/чате?")
+        part2 = escape_markdown(" 💟\n\nПервый: откуда ты узнал о нашем Telegram-канале/чате?")
         
         await context.bot.send_message(
             chat_id=user.id,
@@ -56,7 +56,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif state == 'awaiting_age':
         if not re.search(r'\d+', update.message.text):
             await update.message.reply_text(
-                escape_markdown("❌ Возраст должен быть числом. Попробуйте еще раз!"),
+                escape_markdown("❌ Возраст должен быть числом, а название города написано на русском языке. Попробуй еще раз!"),
                 parse_mode="MarkdownV2"
             )
             return
@@ -71,7 +71,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif state == 'awaiting_city':
         user_data['city'] = update.message.text
         user_data['state'] = 'awaiting_reason'
-        await update.message.reply_text(escape_markdown("Назови три причины, по которым мы не должны тебе отказать 🟧"), parse_mode="MarkdownV2")
+        await update.message.reply_text(escape_markdown("Назови три причины, по которым мы НЕ должны тебе отказать 🤔"), parse_mode="MarkdownV2")
 
     elif state == 'awaiting_reason':
         user_data['reason'] = update.message.text
@@ -84,12 +84,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_info.append(f"🆔 ID: {user.id}")
 
         admin_message = "\n".join([
-            escape_markdown("🚨 Новая заявка!"),
+            escape_markdown("📳 Новая заявка!"),
             *user_info,
-            f"🟪 Откуда: {escape_markdown(user_data['name'])}",
-            f"🟪 Возраст и город: {escape_markdown(user_data['age'])}",
-            f"🟪 Интересы: {escape_markdown(user_data['city'])}",
-            f"🟪 Плюсы: {escape_markdown(user_data['reason'])}"
+            f"💬 Откуда: {escape_markdown(user_data['name'])}",
+            f"🔞 Возраст и город: {escape_markdown(user_data['age'])}",
+            f"❇️ Интересы: {escape_markdown(user_data['city'])}",
+            f"🆒 Плюсы: {escape_markdown(user_data['reason'])}"
         ])
 
         await context.bot.send_message(
@@ -98,7 +98,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="MarkdownV2"
         )
 
-        success_part = escape_markdown("✔ ")
+        success_part = escape_markdown("☑️ ")
         bold_part = escape_markdown("Заявка отправлена")
         rest_text = escape_markdown(
             "!\n\nПосле того, как заявка будет одобрена, «Гей-Рязань» появится в списке твоих чатов Telegram.\n\n"
