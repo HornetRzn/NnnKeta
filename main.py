@@ -48,7 +48,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         user_data['age'] = update.message.text
         user_data['state'] = 'awaiting_city'
-        await update.message.reply_text("Для чего ты хочешь вступить в «Гей\-Рязань», что интересует здесь прежде всего\?\n\nМожно ответить кратко или развёрнуто \(как хочешь\).")
+        await update.message.reply_text(
+            "Для чего ты хочешь вступить в «Гей\-Рязань», что интересует здесь прежде всего\?\n\nМожно ответить кратко или развёрнуто \(как хочешь\).",
+            parse_mode="MarkdownV2"
+        )
 
     elif state == 'awaiting_city':
         user_data['city'] = update.message.text
@@ -69,14 +72,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=ADMIN_ID,
             text=(
-                "🚨 Новая заявка\!\n"  # Экранирован '!'
+                "🚨 Новая заявка\!\n"
                 + "\n".join(user_info) + "\n"
                 f"🟪 Откуда: {user_data['name']}\n"
                 f"🟪 Возраст и город: {user_data['age']}\n"
                 f"🟪 Интересы: {user_data['city']}\n"
                 f"🟪 Плюсы: {user_data['reason']}"
             ),
-            parse_mode="MarkdownV2"  # Добавлен parse_mode
+            parse_mode="MarkdownV2"
         )
         await update.message.reply_text(
             "*✔ Заявка отправлена\!*\n\nПосле того, как заявка будет одобрена, «Гей\-Рязань» появится в списке твоих чатов Telegram\.\n\nЕсли возникнут дополнительные вопросы, тебе напишет наш админ\.",
