@@ -21,20 +21,20 @@ logging.basicConfig(
 )
 
 def escape_markdown(text: str) -> str:
-    """Экранирует спецсимволы MarkdownV2."""
+    """Экранирует все спецсимволы MarkdownV2."""
     escape_chars = '_*[]()~`>#+-=|{}.!'
     return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
 
 async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.chat_join_request.from_user
     try:
-        escaped_text = escape_markdown(
+        text = escape_markdown(
             "Привет! Ответь на четыре вопроса для вступления 🔍\n\n"
             "Первый: откуда ты узнал о нашем Telegram-канале/чате?"
         )
         await context.bot.send_message(
             chat_id=user.id,
-            text=f"*{escaped_text}*",
+            text=f"*{text}*",
             parse_mode="MarkdownV2"
         )
         context.user_data['state'] = 'awaiting_name'
@@ -49,45 +49,49 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if state == 'awaiting_name':
         user_data['name'] = update.message.text
         user_data['state'] = 'awaiting_age'
-        await update.message.reply_text("В следующем сообщении напиши, пожалуйста, свой возраст и из какого ты города.")
+        await update.message.reply_text(
+            escape_markdown("В следующем сообщении напиши, пожалуйста, свой возраст и из какого ты города."),
+            parse_mode="MarkdownV2"
+        )
 
     elif state == 'awaiting_age':
         if not re.search(r'\d+', update.message.text):
-            await update.message.reply_text("❌ Возраст должен быть числом. Попробуйте еще раз!")
+            await update.message.reply_text(
+                escape_markdown("❌ Возраст должен быть числом. Попробуйте еще раз!"),
+                parse_mode="MarkdownV2"
+            )
             return
         user_data['age'] = update.message.text
         user_data['state'] = 'awaiting_city'
-        escaped_text = escape_markdown(
+        text = escape_markdown(
             "Для чего ты хочешь вступить в «Гей-Рязань», что интересует здесь прежде всего?\n\n"
             "Можно ответить кратко или развёрнуто (как хочешь)."
         )
-        await update.message.reply_text(escaped_text, parse_mode="MarkdownV2")
+        await update.message.reply_text(text, parse_mode="MarkdownV2")
 
     elif state == 'awaiting_city':
         user_data['city'] = update.message.text
         user_data['state'] = 'awaiting_reason'
-        await update.message.reply_text("Назови три причины, по которым мы не должны тебе отказать 🟧")
+        await update.message.reply_text(escape_markdown("Назови три причины, по которым мы не должны тебе отказать 🟧"), parse_mode="MarkdownV2")
 
     elif state == 'awaiting_reason':
         user_data['reason'] = update.message.text
         
-        # Формирование информации о пользователе
+        # Экранирование всех данных
         user_info = []
         if user.full_name:
-            escaped_name = escape_markdown(user.full_name)
-            user_info.append(f"👤 Имя: {escaped_name}")
+            user_info.append(f"👤 Имя: {escape_markdown(user.full_name)}")
         if user.username:
-            escaped_username = escape_markdown(user.username)
-            user_info.append(f"🔗 Username: @{escaped_username}")
+            user_info.append(f"🔗 Username: @{escape_markdown(user.username)}")
         user_info.append(f"🆔 ID: {user.id}")
 
         admin_message = "\n".join([
-            "🚨 Новая заявка!",
+            escape_markdown("🚨 Новая заявка!"),
             *user_info,
             f"🟪 Откуда: {escape_markdown(user_data['name'])}",
             f"🟪 Возраст и город: {escape_markdown(user_data['age'])}",
             f"🟪 Интересы: {escape_markdown(user_data['city'])}",
-            f"🟪 Плюсы: {escape_markdown(user_data['reason'])}"  # ✅ Исправлено: добавлена закрывающая скобка
+            f"🟪 Плюсы: {escape_markdown(user_data['reason'])}"
         ])
 
         await context.bot.send_message(
@@ -97,9 +101,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         await update.message.reply_text(
-            "✔ Заявка отправлена!\n\n"
-            "После того, как заявка будет одобрена, «Гей-Рязань» появится в списке твоих чатов Telegram.\n\n"
-            "Если возникнут дополнительные вопросы, тебе напишет наш админ.",
+            escape_markdown(
+                "✔ Заявка отправлена!\n\n"
+                "После того, как заявка будет одобрена, «Гей-Рязань» появится в списке твоих чатов Telegram.\n\n"
+                "Если возникнут дополнительные вопросы, тебе напишет наш админ."
+            ),
             parse_mode="MarkdownV2"
         )
         user_data.clear()
